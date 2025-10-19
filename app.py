@@ -73,20 +73,32 @@ if menu == "📝 Request Items":
 
     st.divider()
 
-    # Item selection
-    item_selected = st.selectbox("Search Item", item_master["Description"].tolist())
+    # Item selection (with manual add option at top)
+    item_options = ["➕ Add New Item Manually"] + item_master["Description"].tolist()
+    item_selected = st.selectbox("Search or Add Item", item_options)
 
-    # Get details
-    item_data = item_master[item_master["Description"] == item_selected].iloc[0]
-    part_number = item_data.get("Part Number", "")
-    uom = item_data.get("UOM", "-")
-
-    # Auto-read Unit Price (if exists)
-    price_columns = [c for c in item_master.columns if "price" in c.lower()]
-    if price_columns:
-        unit_price = item_data[price_columns[0]]
+    # Handle manual item entry
+    if item_selected == "➕ Add New Item Manually":
+        st.info("Enter details for the new item below:")
+        new_item_desc = st.text_input("New Item Description")
+        new_part_number = st.text_input("New Part Number")
+        new_uom = st.text_input("Unit of Measure (UOM)")
+        new_unit_price = st.number_input("Unit Price (IDR)", min_value=0.0, step=1000.0)
+        item_selected = new_item_desc
+        part_number = new_part_number
+        uom = new_uom
+        unit_price = new_unit_price
     else:
-        unit_price = item_data.get("Unit Price", 0)
+        item_data = item_master[item_master["Description"] == item_selected].iloc[0]
+        part_number = item_data.get("Part Number", "")
+        uom = item_data.get("UOM", "-")
+
+        # Auto-read Unit Price (if exists)
+        price_columns = [c for c in item_master.columns if "price" in c.lower()]
+        if price_columns:
+            unit_price = item_data[price_columns[0]]
+        else:
+            unit_price = item_data.get("Unit Price", 0)
 
     quantity = st.number_input("Quantity", min_value=1, step=1)
 
@@ -125,8 +137,8 @@ elif menu == "📦 Usage Entry":
     with col2:
         usage_date = st.date_input("Usage Date", datetime.date.today())
 
-    # Allow selecting existing item or adding new one
-    item_options = item_master["Description"].tolist() + ["➕ Add New Item Manually"]
+    # Allow selecting existing item or adding new one (top)
+    item_options = ["➕ Add New Item Manually"] + item_master["Description"].tolist()
     item_selected = st.selectbox("Select Item Used", item_options)
 
     if item_selected == "➕ Add New Item Manually":
