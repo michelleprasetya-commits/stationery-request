@@ -50,7 +50,8 @@ menu = st.sidebar.radio(
 # ===========================
 departments = [
     "Compliance", "HR & GA", "Finance", "Production",
-    "Quality Control", "Warehouse", "Engineering", "Quality Validation", "ISS", "Production Packaging"
+    "Quality Control", "Warehouse", "Engineering",
+    "Quality Validation", "ISS", "Production Packaging"
 ]
 
 # ===========================
@@ -124,10 +125,22 @@ elif menu == "📦 Usage Entry":
     with col2:
         usage_date = st.date_input("Usage Date", datetime.date.today())
 
-    item_selected = st.selectbox("Select Item Used", item_master["Description"].tolist())
-    item_data = item_master[item_master["Description"] == item_selected].iloc[0]
-    part_number = item_data.get("Part Number", "")
-    uom = item_data.get("UOM", "-")
+    # Allow selecting existing item or adding new one
+    item_options = item_master["Description"].tolist() + ["➕ Add New Item Manually"]
+    item_selected = st.selectbox("Select Item Used", item_options)
+
+    if item_selected == "➕ Add New Item Manually":
+        st.info("Enter details for the new item below:")
+        new_item_desc = st.text_input("New Item Description")
+        new_part_number = st.text_input("New Part Number")
+        new_uom = st.text_input("Unit of Measure (UOM)")
+        item_selected = new_item_desc
+        part_number = new_part_number
+        uom = new_uom
+    else:
+        item_data = item_master[item_master["Description"] == item_selected].iloc[0]
+        part_number = item_data.get("Part Number", "")
+        uom = item_data.get("UOM", "-")
 
     qty_used = st.number_input("Usage Quantity", min_value=1, step=1)
     used_by = st.text_input("Used By (Name)")
@@ -211,4 +224,3 @@ elif menu == "📊 Data Summary":
         st.session_state.requests = []
         st.session_state.usage = []
         st.success("✅ All data has been cleared!")
-
