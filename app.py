@@ -51,7 +51,7 @@ menu = st.sidebar.radio(
 departments = [
     "Compliance", "HR & GA", "Finance", "Production",
     "Quality Control", "Warehouse", "Engineering",
-    "Quality Validation", "ISS", "Production Packaging", "Office fl 1"
+    "Quality Validation", "ISS", "Production Packaging"
 ]
 
 # ===========================
@@ -182,36 +182,87 @@ elif menu == "📊 Data Summary":
 
     tab1, tab2, tab3 = st.tabs(["📝 Requests", "📦 Usage", "📈 Dashboard"])
 
-    # REQUESTS
+    # ========================
+    # TAB 1: REQUESTS
+    # ========================
     with tab1:
         if "requests" in st.session_state and len(st.session_state.requests) > 0:
             df_req = pd.DataFrame(st.session_state.requests)
-            st.dataframe(df_req, use_container_width=True)
-            total_all = df_req["Total (IDR)"].sum()
+
+            st.markdown("### 🔍 Filter Requests")
+
+            df_req["Date"] = pd.to_datetime(df_req["Date"])
+
+            col1, col2 = st.columns(2)
+            with col1:
+                dept_filter = st.selectbox("Select Department (or All)", ["All"] + sorted(df_req["Department"].unique().tolist()))
+            with col2:
+                month_filter = st.selectbox("Select Month (or All)", ["All"] + sorted(df_req["Date"].dt.strftime("%Y-%m").unique().tolist()))
+
+            filtered_req = df_req.copy()
+            if dept_filter != "All":
+                filtered_req = filtered_req[filtered_req["Department"] == dept_filter]
+            if month_filter != "All":
+                filtered_req = filtered_req[filtered_req["Date"].dt.strftime("%Y-%m") == month_filter]
+
+            st.markdown("### 📋 Filtered Request Records")
+            st.dataframe(filtered_req, use_container_width=True)
+
+            total_all = filtered_req["Total (IDR)"].sum()
             st.write(f"**Total Requested Value: {total_all:,.0f} IDR**")
 
-            csv = df_req.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Download Requests (CSV)", csv, "requests_summary.csv", "text/csv")
+            csv = filtered_req.to_csv(index=False).encode("utf-8")
+            st.download_button("⬇️ Download Filtered Requests (CSV)", csv, "requests_summary_filtered.csv", "text/csv")
+
+            st.divider()
+            st.markdown("### 📘 Full Request Data (Unfiltered)")
+            st.dataframe(df_req, use_container_width=True)
         else:
             st.info("No request data yet.")
 
-    # USAGE
+    # ========================
+    # TAB 2: USAGE
+    # ========================
     with tab2:
         if "usage" in st.session_state and len(st.session_state.usage) > 0:
             df_usage = pd.DataFrame(st.session_state.usage)
-            st.dataframe(df_usage, use_container_width=True)
+            st.markdown("### 🔍 Filter Usage")
 
-            csv2 = df_usage.to_csv(index=False).encode("utf-8")
-            st.download_button("⬇️ Download Usage (CSV)", csv2, "usage_summary.csv", "text/csv")
+            df_usage["Date"] = pd.to_datetime(df_usage["Date"])
+
+            col1, col2 = st.columns(2)
+            with col1:
+                dept_filter_u = st.selectbox("Select Department (or All)", ["All"] + sorted(df_usage["Department"].unique().tolist()), key="usage_dept_filter")
+            with col2:
+                month_filter_u = st.selectbox("Select Month (or All)", ["All"] + sorted(df_usage["Date"].dt.strftime("%Y-%m").unique().tolist()), key="usage_month_filter")
+
+            filtered_usage = df_usage.copy()
+            if dept_filter_u != "All":
+                filtered_usage = filtered_usage[filtered_usage["Department"] == dept_filter_u]
+            if month_filter_u != "All":
+                filtered_usage = filtered_usage[filtered_usage["Date"].dt.strftime("%Y-%m") == month_filter_u]
+
+            st.markdown("### 📋 Filtered Usage Records")
+            st.dataframe(filtered_usage, use_container_width=True)
+
+            csv2 = filtered_usage.to_csv(index=False).encode("utf-8")
+            st.download_button("⬇️ Download Filtered Usage (CSV)", csv2, "usage_summary_filtered.csv", "text/csv")
+
+            st.divider()
+            st.markdown("### 📘 Full Usage Data (Unfiltered)")
+            st.dataframe(df_usage, use_container_width=True)
         else:
             st.info("No usage data yet.")
 
-    # DASHBOARD
+    # ========================
+    # TAB 3: DASHBOARD
+    # ========================
     with tab3:
         st.subheader("📊 Visualization Dashboard")
 
         if "requests" in st.session_state and len(st.session_state.requests) > 0:
             df_req = pd.DataFrame(st.session_state.requests)
+            df_req["Date"] = pd.to_datetime(df_req["Date"])
 
             # Department totals
             dept_summary = df_req.groupby("Department")["Total (IDR)"].sum().reset_index()
@@ -224,7 +275,7 @@ elif menu == "📊 Data Summary":
             st.plotly_chart(fig2, use_container_width=True)
 
             # Monthly trend
-            df_req["Month"] = pd.to_datetime(df_req["Date"]).dt.to_period("M").astype(str)
+            df_req["Month"] = df_req["Date"].dt.to_period("M").astype(str)
             month_summary = df_req.groupby("Month")["Total (IDR)"].sum().reset_index()
             fig3 = px.line(month_summary, x="Month", y="Total (IDR)", markers=True, title="Monthly Request Trend")
             st.plotly_chart(fig3, use_container_width=True)
@@ -236,4 +287,3 @@ elif menu == "📊 Data Summary":
         st.session_state.requests = []
         st.session_state.usage = []
         st.success("✅ All data has been cleared!")
-
