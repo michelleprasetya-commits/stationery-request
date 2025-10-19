@@ -49,8 +49,8 @@ menu = st.sidebar.radio(
 # DEPARTMENT LIST
 # ===========================
 departments = [
-    "Administration", "HR & GA", "Finance", "Production",
-    "Quality Control", "Warehouse", "Engineering", "Procurement"
+    "Compliance", "HR & GA", "Finance", "Production",
+    "Quality Control", "Warehouse", "Engineering", "Quality Validation", "ISS", "Production Packaging"
 ]
 
 # ===========================
@@ -211,3 +211,4 @@ elif menu == "📊 Data Summary":
         st.session_state.requests = []
         st.session_state.usage = []
         st.success("✅ All data has been cleared!")
+
